@@ -1,0 +1,6 @@
+.vs
+player_data/*
+update-latest.sh
+__pycache__
+.env
+*.pyc
