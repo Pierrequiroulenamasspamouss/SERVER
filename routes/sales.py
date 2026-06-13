@@ -8,6 +8,7 @@ sales_bp = Blueprint('sales', __name__)
 SERVER_DIR = str(Config.BASE_DIR)
 DEFINITIONS_PATH = Config.DEFINITIONS_PATH
 MARKET_PRICES_PATH = Config.MARKET_PRICES_PATH
+SCHEDULE_PATH = Config.SCHEDULE_PATH
 
 _cached_definitions = None
 _cached_defs_indexed = None
@@ -65,7 +66,6 @@ def get_sales(user_id):
 
     # 2. Load Schedule
     schedule = {}
-    SCHEDULE_PATH = os.path.join(SERVER_DIR, "ShopSchedule.json")
     if os.path.exists(SCHEDULE_PATH):
         try:
             with open(SCHEDULE_PATH, 'r') as f:

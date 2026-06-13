@@ -666,7 +666,81 @@ def link_discord_to_player(uid, discord_profile):
     conn.close()
     print(f"[DB] Linked Discord {discord_id}. Consolidated UIDs: {consolidated_uid_str} | Survivor: {survivor_record_uid}")
 
+def check_and_generate_social_events():
+    import datetime
+    import time
+    
+    filepath = DEFINITIONS_PATH
+    if not filepath or not os.path.exists(filepath):
+        return
+        
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"[TSE] Error loading definitions for checking: {e}")
+        return
+
+    events = data.get("timedSocialEventDefinitions", [])
+    now = int(time.time())
+    
+    need_regen = False
+    if not events:
+        need_regen = True
+    else:
+        last_event = events[-1]
+        last_finish = last_event.get("finishTime", 0)
+        if last_finish < now + 4 * 7 * 24 * 3600:
+            need_regen = True
+            
+    if need_regen:
+        print("[TSE] Social events are expired or expiring soon. Regenerating weekly events...")
+        today = datetime.datetime.now(datetime.timezone.utc)
+        monday = today - datetime.timedelta(days=today.weekday())
+        monday = monday.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        new_events = []
+        order_templates = [
+            {"orderId": 1, "transaction": 16008},
+            {"orderId": 2, "transaction": 16071},
+            {"orderId": 3, "transaction": 16009},
+            {"orderId": 4, "transaction": 16056},
+            {"orderId": 5, "transaction": 16037},
+            {"orderId": 6, "transaction": 16061},
+            {"orderId": 7, "transaction": 16074},
+            {"orderId": 8, "transaction": 16039},
+            {"orderId": 9, "transaction": 16020}
+        ]
+        
+        base_id = 45000
+        for week in range(52):
+            event_start = monday + datetime.timedelta(weeks=week)
+            event_end = event_start + datetime.timedelta(days=6)
+            
+            start_ts = int(event_start.timestamp())
+            finish_ts = int(event_end.timestamp())
+            
+            ev = {
+                "finishTime": finish_ts,
+                "id": base_id + week,
+                "localizedKey": "TempTimedSocialEvent",
+                "maxTeamSize": 4,
+                "orders": order_templates,
+                "rewardTransaction": 22,
+                "startTime": start_ts
+            }
+            new_events.append(ev)
+            
+        data["timedSocialEventDefinitions"] = new_events
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            print(f"[TSE] Successfully regenerated {len(new_events)} weekly social events.")
+        except Exception as e:
+            print(f"[TSE] Error writing regenerated definitions: {e}")
+
 def migrate_files_to_db():
+    check_and_generate_social_events()
     if not os.path.exists(PLAYER_DATA_DIR): return
     for f in os.listdir(PLAYER_DATA_DIR):
         if f.endswith('.json') and f != 'leaderboard.json':

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minions Paradise - Server Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(99, 102, 241, 0.2);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Login Container */
+        .login-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .login-card h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #818cf8, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: var(--text-main);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error-msg {
+            color: var(--danger);
+            margin-top: 15px;
+            font-size: 0.95rem;
+            min-height: 20px;
+        }
+
+        /* Dashboard Main Layout */
+        .dashboard-container {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            min-height: 80vh;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: rgba(15, 23, 42, 0.4);
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-layout {
+            display: flex;
+            min-height: 80vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .logo-area {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            background: linear-gradient(to right, #818cf8, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--text-main);
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Section styles */
+        .section-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Tables */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .badge-info { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+
+        /* Forms in Admin Panel */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            margin-bottom: 16px;
+        }
+
+        .form-control label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .form-control input, .form-control select {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-control input:focus, .form-control select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            width: auto;
+        }
+
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.2);
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Shop Packs List */
+        .pack-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: var(--transition);
+        }
+
+        .pack-item:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .pack-info h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .pack-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .pack-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Area -->
+    <div id="login-view" class="login-card">
+        <h1>Admin Console</h1>
+        <p>Access Server Configuration & Control Panel</p>
+        <div class="input-group">
+            <label for="admin-password">Admin Password</label>
+            <input type="password" id="admin-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') login()">
+        </div>
+        <button class="btn" onclick="login()">Authenticate</button>
+        <div id="login-error" class="error-msg"></div>
+    </div>
+
+    <!-- Dashboard Main Area -->
+    <div id="dashboard-view" class="dashboard-container">
+        <div class="dashboard-layout">
+            <div class="sidebar">
+                <div class="logo-area">
+                    <span>👑 Admin Panel</span>
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item active" onclick="switchTab('players')" id="tab-players">Players</li>
+                    <li class="menu-item" onclick="switchTab('shop')" id="tab-shop">Shop Schedule</li>
+                    <li class="menu-item" onclick="switchTab('events')" id="tab-events">Social Events</li>
+                </ul>
+                <div class="logout-btn" onclick="logout()">Logout</div>
+            </div>
+            
+            <div class="main-content">
+                <!-- Players Tab -->
+                <div id="section-players" class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Registered Players</h2>
+                        <button class="btn btn-small" onclick="loadPlayers()">Refresh</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>UID</th>
+                                        <th>Level (XP)</th>
+                                        <th>Playtime</th>
+                                        <th>Last Active</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="players-table-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shop Schedule Tab -->
+                <div id="section-shop" class="dashboard-section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Shop & Sales Schedule</h2>
+                        <div style="display:flex; gap: 10px;">
+                            <button class="btn btn-small btn-secondary" onclick="loadShop()">Reset Changes</button>
+                            <button class="btn btn-small" onclick="saveShopSchedule()">Save Schedule</button>
+                        </div>
+                    </div>
+
+                    <!-- Global Config -->
+                    <div class="card">
+                        <h3>Global Options</h3>
+                        <div class="form-grid" style="margin-top: 15px;">
+                            <div class="form-control">
+                                <label>Default Min Level</label>
+                                <input type="number" id="shop-default-min-level" min="0">
+                            </div>
+                            <div class="form-control">
+                                <label>Default Max Purchases</label>
+                                <input type="number" id="shop-default-max-purchases" min="1">
+                            </div>
+                            <div class="form-control">
+                                <label>Global End UTC Time</label>
+                                <input type="number" id="shop-global-end-utc">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Pack Config -->
+                    <div class="card">
+                        <h3>Add / Update Active Offer</h3>
+                        <div class="form-grid" style="margin-top: 15px; grid-template-columns: 2fr 1fr 1fr 1fr;">
+                            <div class="form-control">
+                                <label>Pack Selection</label>
+                                <select id="new-pack-id">
+                                    <!-- Loaded definitions -->
+                                </select>
+                            </div>
+                            <div class="form-control">
+                                <label>Min Level</label>
+                                <input type="number" id="new-pack-min-level" value="0">
+                            </div>
+                            <div class="form-control">
+                                <label>Max Purchases (-1 = unlimited)</label>
+                                <input type="number" id="new-pack-max-purchases" value="1">
+                            </div>
+                            <div class="form-control" style="display:flex; align-items:flex-end;">
+                                <button class="btn" style="padding: 10px;" onclick="addActivePack()">Add Offer</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Packs list -->
+                    <div class="card">
+                        <h3>Currently Active Scheduled Packs</h3>
+                        <div id="active-packs-list" style="margin-top: 20px;">
+                            <!-- Dynamic list -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Events Tab -->
+                <div id="section-events" class="dashboard-section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Social Events Planning</h2>
+                        <button class="btn btn-small btn-danger" onclick="regenerateSocialEvents()">Force Regenerate 52 Weeks</button>
+                    </div>
+                    <div class="card">
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">
+                            Weekly social events are planned automatically on server startup. Below you can see the currently active and upcoming events.
+                        </p>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Event ID</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                        <th>Max Team Size</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="events-table-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let adminToken = localStorage.getItem("admin_token") || "";
+        let currentSchedule = {};
+        let availablePacks = [];
+
+        window.onload = function() {
+            if (adminToken) {
+                showDashboard();
+            }
+        }
+
+        function getHeaders() {
+            return {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${adminToken}`
+            };
+        }
+
+        function showDashboard() {
+            document.getElementById("login-view").style.display = "none";
+            document.getElementById("dashboard-view").style.display = "block";
+            loadPlayers();
+        }
+
+        function login() {
+            const pwd = document.getElementById("admin-password").value;
+            const errorDiv = document.getElementById("login-error");
+            errorDiv.innerText = "";
+
+            fetch("/api/admin/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: pwd })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Incorrect admin password");
+                return res.json();
+            })
+            .then(data => {
+                adminToken = data.token;
+                localStorage.setItem("admin_token", adminToken);
+                showDashboard();
+            })
+            .catch(err => {
+                errorDiv.innerText = err.message;
+            });
+        }
+
+        function logout() {
+            adminToken = "";
+            localStorage.removeItem("admin_token");
+            document.getElementById("login-view").style.display = "block";
+            document.getElementById("dashboard-view").style.display = "none";
+        }
+
+        function switchTab(tab) {
+            // Hide all sections
+            document.querySelectorAll(".dashboard-section").forEach(s => s.style.display = "none");
+            document.querySelectorAll(".menu-item").forEach(m => m.classList.remove("active"));
+
+            // Show selected
+            document.getElementById(`section-${tab}`).style.display = "block";
+            document.getElementById(`tab-${tab}`).classList.add("active");
+
+            if (tab === 'players') loadPlayers();
+            if (tab === 'shop') loadShop();
+            if (tab === 'events') loadEvents();
+        }
+
+        function loadPlayers() {
+            fetch(`/api/admin/players?token=${adminToken}`, { headers: getHeaders() })
+            .then(res => {
+                if (res.status === 401) return logout();
+                return res.json();
+            })
+            .then(players => {
+                const tbody = document.getElementById("players-table-body");
+                tbody.innerHTML = "";
+                if (!players || players.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No players have logged in yet.</td></tr>`;
+                    return;
+                }
+                players.forEach(p => {
+                    const tr = document.createElement("tr");
+                    const date = new Date(p.last_updated).toLocaleString();
+                    const playtimeHours = (p.playtime / 3600).toFixed(1);
+                    
+                    const avatar = p.discord_avatar ? 
+                        `<img src="https://cdn.discordapp.com/avatars/${p.uid}/${p.discord_avatar}.png" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:10px;">` :
+                        `<div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--primary);vertical-align:middle;margin-right:10px;">${p.name[0]}</div>`;
+
+                    tr.innerHTML = `
+                        <td>${avatar} <span style="font-weight:500;">${p.name}</span> ${p.discord_username ? `<span style="color:var(--text-muted);font-size:0.85rem">(${p.discord_username})</span>`:''}</td>
+                        <td style="font-family:monospace;color:var(--text-muted)">${p.uid.substring(0, 15)}...</td>
+                        <td><span class="badge badge-info">Lvl ${p.level}</span> <span style="color:var(--text-muted);font-size:0.85rem">${p.xp} XP</span></td>
+                        <td>${playtimeHours} hrs</td>
+                        <td style="color:var(--text-muted)">${date}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function loadShop() {
+            fetch(`/api/admin/shop_schedule?token=${adminToken}`, { headers: getHeaders() })
+            .then(res => {
+                if (res.status === 401) return logout();
+                return res.json();
+            })
+            .then(data => {
+                currentSchedule = data.schedule;
+                availablePacks = data.available_packs;
+
+                // Populate global options
+                document.getElementById("shop-default-min-level").value = currentSchedule.default_min_level || 0;
+                document.getElementById("shop-default-max-purchases").value = currentSchedule.default_max_purchases || 1;
+                document.getElementById("shop-global-end-utc").value = currentSchedule.global_end_utc || 2000000000;
+
+                // Populate select option
+                const select = document.getElementById("new-pack-id");
+                select.innerHTML = "";
+                availablePacks.forEach(pack => {
+                    const opt = document.createElement("option");
+                    opt.value = pack.id;
+                    opt.innerText = `[${pack.id}] ${pack.name}`;
+                    select.appendChild(opt);
+                });
+
+                renderActivePacks();
+            });
+        }
+
+        function renderActivePacks() {
+            const list = document.getElementById("active-packs-list");
+            list.innerHTML = "";
+            const active = currentSchedule.active_packs || {};
+
+            if (Object.keys(active).length === 0) {
+                list.innerHTML = `<p style="color:var(--text-muted);text-align:center;padding:20px;">No scheduled packs are currently active.</p>`;
+                return;
+            }
+
+            for (const [packId, cfg] of Object.entries(active)) {
+                // Find name from available packs definition if matches
+                const packDef = availablePacks.find(x => x.id === packId);
+                const packName = packDef ? packDef.name : `Pack ${packId}`;
+
+                const div = document.createElement("div");
+                div.className = "pack-item";
+                div.innerHTML = `
+                    <div class="pack-info">
+                        <h4>[ID: ${packId}] ${packName}</h4>
+                        <p>Min Level: ${cfg.min_level} | Max Purchases: ${cfg.max_purchases === -1 ? 'Unlimited' : cfg.max_purchases}</p>
+                    </div>
+                    <div class="pack-actions">
+                        <button class="btn btn-small btn-secondary" onclick="editPack('${packId}')">Configure</button>
+                        <button class="btn btn-small btn-danger" onclick="removePack('${packId}')">Delete</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            }
+        }
+
+        function addActivePack() {
+            const select = document.getElementById("new-pack-id");
+            const packId = select.value;
+            const minLevel = parseInt(document.getElementById("new-pack-min-level").value) || 0;
+            const maxPurchases = parseInt(document.getElementById("new-pack-max-purchases").value) || 1;
+
+            if (!currentSchedule.active_packs) {
+                currentSchedule.active_packs = {};
+            }
+
+            currentSchedule.active_packs[packId] = {
+                min_level: minLevel,
+                max_purchases: maxPurchases,
+                start_utc: 0,
+                end_utc: 2000000000
+            };
+
+            renderActivePacks();
+        }
+
+        function editPack(packId) {
+            const cfg = currentSchedule.active_packs[packId];
+            if (!cfg) return;
+            
+            document.getElementById("new-pack-id").value = packId;
+            document.getElementById("new-pack-min-level").value = cfg.min_level;
+            document.getElementById("new-pack-max-purchases").value = cfg.max_purchases;
+        }
+
+        function removePack(packId) {
+            if (currentSchedule.active_packs && currentSchedule.active_packs[packId]) {
+                delete currentSchedule.active_packs[packId];
+                renderActivePacks();
+            }
+        }
+
+        function saveShopSchedule() {
+            // Update global options in schedule object
+            currentSchedule.default_min_level = parseInt(document.getElementById("shop-default-min-level").value) || 0;
+            currentSchedule.default_max_purchases = parseInt(document.getElementById("shop-default-max-purchases").value) || 1;
+            currentSchedule.global_end_utc = parseInt(document.getElementById("shop-global-end-utc").value) || 2000000000;
+
+            fetch(`/api/admin/shop_schedule?token=${adminToken}`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify({ schedule: currentSchedule })
+            })
+            .then(res => {
+                if (res.status === 401) return logout();
+                return res.json();
+            })
+            .then(data => {
+                alert(data.msg || "Shop schedule saved!");
+                loadShop();
+            })
+            .catch(err => alert("Error: " + err.message));
+        }
+
+        function loadEvents() {
+            fetch(`/api/admin/social_events?token=${adminToken}`, { headers: getHeaders() })
+            .then(res => {
+                if (res.status === 401) return logout();
+                return res.json();
+            })
+            .then(data => {
+                const tbody = document.getElementById("events-table-body");
+                tbody.innerHTML = "";
+                const events = data.events || [];
+                const now = data.now;
+
+                if (events.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No social events generated in definitions.json.</td></tr>`;
+                    return;
+                }
+
+                events.forEach(ev => {
+                    const startLocal = new Date(ev.startTime * 1000).toLocaleString();
+                    const finishLocal = new Date(ev.finishTime * 1000).toLocaleString();
+                    
+                    let statusBadge = "";
+                    if (now >= ev.startTime && now <= ev.finishTime) {
+                        statusBadge = `<span class="badge badge-success">ACTIVE NOW</span>`;
+                    } else if (now < ev.startTime) {
+                        statusBadge = `<span class="badge badge-info">UPCOMING</span>`;
+                    } else {
+                        statusBadge = `<span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-muted);">EXPIRED</span>`;
+                    }
+
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td style="font-weight:600;">#${ev.id}</td>
+                        <td style="color:var(--text-muted);">${startLocal}</td>
+                        <td style="color:var(--text-muted);">${finishLocal}</td>
+                        <td>${ev.maxTeamSize} players</td>
+                        <td>${statusBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function regenerateSocialEvents() {
+            if (!confirm("Are you sure you want to regenerate all 52 weeks starting from this week? Existing custom TSE team progress in the DB will match based on event ID.")) {
+                return;
+            }
+
+            fetch(`/api/admin/social_events/regenerate?token=${adminToken}`, {
+                method: "POST",
+                headers: getHeaders()
+            })
+            .then(res => {
+                if (res.status === 401) return logout();
+                return res.json();
+            })
+            .then(data => {
+                alert(data.msg || "Events regenerated!");
+                loadEvents();
+            })
+            .catch(err => alert("Error: " + err.message));
+        }
+    </script>
+</body>
+</html>

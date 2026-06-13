@@ -377,15 +377,12 @@ def get_dcn_token():
 
 # --- DISCORD LIVE LOGIN ---
 def get_discord_config():
-    env_path = os.path.join(os.path.dirname(__file__), '.env')
-    config = {}
-    if os.path.exists(env_path):
-        with open(env_path, 'r') as f:
-            for line in f:
-                if '=' in line:
-                    k, v = line.strip().split('=', 1)
-                    config[k] = v
-    return config
+    return {
+        'DISCORD_CLIENT_ID': os.getenv('DISCORD_CLIENT_ID', '1484015777005834371'),
+        'DISCORD_CLIENT_SECRET': os.getenv('DISCORD_CLIENT_SECRET', 'kMhJtKt-PEsAnlEp5-kVBlEtDRvDWRzB'),
+        'DISCORD_REDIRECT_URI': os.getenv('DISCORD_REDIRECT_URI', 'http://localhost:44733/auth/discord/callback'),
+        'DISCORD_REDIRECT_URI_public': os.getenv('DISCORD_REDIRECT_URI_public', 'http://bluebridge.homeonthewater.com:44733/auth/discord/callback')
+    }
 
 def get_discord_redirect_uri(request):
     config = get_discord_config()

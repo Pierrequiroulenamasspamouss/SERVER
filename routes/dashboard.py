@@ -321,3 +321,169 @@ def update_inventory_item():
     conn.close()
     
     return jsonify({"msg": "Inventory updated display refreshed!"})
+
+# --- ADMIN DASHBOARD ---
+from config import Config
+
+def verify_admin_token(token):
+    return token == f"tok_admin_{Config.ADMIN_PASSWORD}"
+
+def require_admin():
+    # Helper to check token from either headers, JSON body, or query params
+    token = request.headers.get("Authorization")
+    if not token and request.is_json:
+        try:
+            token = request.json.get("token")
+        except:
+            pass
+    if not token:
+        token = request.args.get("token")
+    
+    if token and token.startswith("Bearer "):
+        token = token[7:]
+        
+    if not verify_admin_token(token):
+        return False
+    return True
+
+@dashboard_bp.route('/admin', methods=['GET'])
+def render_admin_dashboard():
+    return render_template('admin.html')
+
+@dashboard_bp.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    data = request.json or {}
+    password = data.get("password", "")
+    if password == Config.ADMIN_PASSWORD:
+        return jsonify({
+            "status": "success",
+            "token": f"tok_admin_{Config.ADMIN_PASSWORD}"
+        })
+    return jsonify({"error": "Invalid admin password."}), 401
+
+@dashboard_bp.route('/api/admin/players', methods=['GET'])
+def admin_players():
+    if not require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    conn = get_db_connection()
+    rows = conn.execute('''
+        SELECT uid, name, PlayerLevel, xp, Time_played, discord_username, discord_avatar, last_updated 
+        FROM players
+        ORDER BY last_updated DESC
+    ''').fetchall()
+    conn.close()
+    
+    players = []
+    for r in rows:
+        players.append({
+            "uid": r["uid"],
+            "name": r["name"] or "Player",
+            "level": r["PlayerLevel"] or 0,
+            "xp": r["xp"] or 0,
+            "playtime": r["Time_played"] or 0,
+            "discord_username": r["discord_username"] or "",
+            "discord_avatar": r["discord_avatar"] or "",
+            "last_updated": r["last_updated"]
+        })
+    return jsonify(players)
+
+@dashboard_bp.route('/api/admin/shop_schedule', methods=['GET'])
+def admin_get_shop_schedule():
+    if not require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    schedule = {"active_packs": {}, "default_min_level": 0, "default_max_purchases": 1, "global_end_utc": 2000000000}
+    if os.path.exists(Config.SCHEDULE_PATH):
+        try:
+            with open(Config.SCHEDULE_PATH, 'r') as f:
+                schedule = json.load(f)
+        except Exception as e:
+            print(f"[ADMIN] Error reading schedule: {e}")
+            
+    # Also fetch all available sale pack definitions from definitions.json to allow selecting them
+    pack_options = []
+    if os.path.exists(DEFINITIONS_PATH):
+        try:
+            with open(DEFINITIONS_PATH, 'r') as f:
+                defs = json.load(f)
+                # Parse all packs
+                for pack in defs.get('salePackDefinitions', []):
+                    pack_options.append({
+                        "id": str(pack.get("id")),
+                        "name": pack.get("localizedKey", f"Pack {pack.get('id')}")
+                    })
+                for pack in defs.get('storeItemDefinitions', []):
+                    pack_options.append({
+                        "id": str(pack.get("id")),
+                        "name": pack.get("localizedKey", f"Store Item {pack.get('id')}")
+                    })
+        except Exception as e:
+            print(f"[ADMIN] Error reading pack definitions: {e}")
+            
+    return jsonify({
+        "schedule": schedule,
+        "available_packs": pack_options
+    })
+
+@dashboard_bp.route('/api/admin/shop_schedule', methods=['POST'])
+def admin_save_shop_schedule():
+    if not require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.json or {}
+    schedule_data = data.get("schedule")
+    if not schedule_data:
+        return jsonify({"error": "Missing schedule data"}), 400
+        
+    try:
+        os.makedirs(os.path.dirname(Config.SCHEDULE_PATH), exist_ok=True)
+        with open(Config.SCHEDULE_PATH, 'w') as f:
+            json.dump(schedule_data, f, indent=2)
+        return jsonify({"msg": "Shop schedule saved successfully!"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to save schedule: {e}"}), 500
+
+@dashboard_bp.route('/api/admin/social_events', methods=['GET'])
+def admin_get_social_events():
+    if not require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    events = []
+    if os.path.exists(DEFINITIONS_PATH):
+        try:
+            with open(DEFINITIONS_PATH, 'r') as f:
+                defs = json.load(f)
+                events = defs.get('timedSocialEventDefinitions', [])
+        except Exception as e:
+            print(f"[ADMIN] Error reading social events: {e}")
+            
+    import time
+    now = int(time.time())
+    
+    return jsonify({
+        "events": events,
+        "now": now
+    })
+
+@dashboard_bp.route('/api/admin/social_events/regenerate', methods=['POST'])
+def admin_regenerate_social_events():
+    if not require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    try:
+        # Force check_and_generate_social_events by mocking expired check or deleting existing
+        # But wait! We can just modify definitions.json and write it
+        from utils.db import check_and_generate_social_events
+        # Let's call the function, but since it has a 4-week logic, let's force write by updating definitions.json to have empty events first, then running it!
+        if os.path.exists(DEFINITIONS_PATH):
+            with open(DEFINITIONS_PATH, 'r') as f:
+                d = json.load(f)
+            d["timedSocialEventDefinitions"] = []
+            with open(DEFINITIONS_PATH, 'w') as f:
+                json.dump(d, f, indent=2)
+                
+        check_and_generate_social_events()
+        return jsonify({"msg": "Social events successfully regenerated!"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to regenerate: {e}"}), 500

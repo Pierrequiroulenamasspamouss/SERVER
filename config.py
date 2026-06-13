@@ -27,10 +27,14 @@ class Config:
     PLAYER_DATA_DIR = os.getenv("PLAYER_DATA_DIR", str(BASE_DIR / "player_data"))
     NOPROMOUSERS_PATH = os.getenv("NOPROMOUSERS_PATH", str(BASE_DIR / "data" / "nopromousers.txt"))
     MARKET_PRICES_PATH = os.getenv("MARKET_PRICES_PATH", str(BASE_DIR / "data" / "market_prices.json"))
+    SCHEDULE_PATH = os.getenv("SCHEDULE_PATH", str(BASE_DIR / "data" / "ShopSchedule.json"))
     
     # URL configurations
     BASE_URL = os.getenv("BASE_URL", f"http://localhost:{PORT_MAIN}")
     SECONDARY_URL = os.getenv("SECONDARY_URL", f"http://localhost:{PORT_SECONDARY}")
+    
+    # Admin settings
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
 
 # Create directories if they don't exist
 os.makedirs(Config.PLAYER_DATA_DIR, exist_ok=True)
