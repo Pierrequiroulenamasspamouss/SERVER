@@ -398,7 +398,12 @@ def invite_tse_user(event_id, team_id, user_id):
 
 @game_bp.route('/rest/tse/event/<int:event_id>/team/<int:team_id>/user/<user_id>/order', methods=['POST'])
 def fill_tse_order(event_id, team_id, user_id):
-    order_id = int(request.args.get('orderId', 0) or request.args.get('orderid', 0))
+    order_id = 0
+    data = request.get_json(force=True, silent=True)
+    if data and isinstance(data, dict):
+        order_id = int(data.get('orderId') or data.get('orderid') or 0)
+    if not order_id:
+        order_id = int(request.args.get('orderId', 0) or request.args.get('orderid', 0))
     print(f"[TSE] FILL ORDER: event={event_id} team={team_id} user={user_id} order={order_id}", flush=True)
     team = get_tse_team_by_id(team_id)
     if not team:
